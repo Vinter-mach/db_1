@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace Game.Domain
 {
+    [BsonIgnoreExtraElements]
     public class GameEntity
     {
+        [BsonElement("players")]
         private readonly List<Player> players;
 
         public GameEntity(int turnsCount)
@@ -13,28 +16,38 @@ namespace Game.Domain
         {
         }
 
-        public GameEntity(Guid id, GameStatus status, int turnsCount, int currentTurnIndex, List<Player> players)
+        [BsonConstructor]
+        public GameEntity(
+            Guid id,
+            GameStatus status,
+            int turnsCount,
+            int currentTurnIndex,
+            List<Player> players)
         {
             Id = id;
             Status = status;
             TurnsCount = turnsCount;
             CurrentTurnIndex = currentTurnIndex;
-            this.players = players;
+            this.players = players ?? new List<Player>();
         }
 
+        [BsonElement("id")]
         public Guid Id
         {
             get;
-            // ReSharper disable once AutoPropertyCanBeMadeGetOnly.Local For MongoDB
             private set;
         }
 
+        [BsonIgnore]
         public IReadOnlyList<Player> Players => players.AsReadOnly();
 
+        [BsonElement("turnsCount")]
         public int TurnsCount { get; }
 
+        [BsonElement("currentTurnIndex")]
         public int CurrentTurnIndex { get; private set; }
 
+        [BsonElement("status")]
         public GameStatus Status { get; private set; }
 
         public void AddPlayer(UserEntity user)
@@ -46,12 +59,8 @@ namespace Game.Domain
                 Status = GameStatus.Playing;
         }
 
-        public bool IsFinished()
-        {
-            return CurrentTurnIndex >= TurnsCount
-                   || Status == GameStatus.Finished
-                   || Status == GameStatus.Canceled;
-        }
+        public bool IsFinished() =>
+            CurrentTurnIndex >= TurnsCount || Status == GameStatus.Finished || Status == GameStatus.Canceled;
 
         public void Cancel()
         {
@@ -59,6 +68,7 @@ namespace Game.Domain
                 Status = GameStatus.Canceled;
         }
 
+        [BsonIgnore]
         public bool HaveDecisionOfEveryPlayer => Players.All(p => p.Decision.HasValue);
 
         public void SetPlayerDecision(Guid userId, PlayerDecision decision)
@@ -88,14 +98,20 @@ namespace Game.Domain
                     winnerId = player.UserId;
                 }
             }
-            //TODO Заполнить все внутри GameTurnEntity, в том числе winnerId
-            var result = new GameTurnEntity();
-            // Это должно быть после создания GameTurnEntity
+
+            var result = new GameTurnEntity
+            {
+                WinnerId = winnerId,
+                TurnIndex = CurrentTurnIndex
+            };
+
             foreach (var player in Players)
                 player.Decision = null;
+
             CurrentTurnIndex++;
             if (CurrentTurnIndex == TurnsCount)
                 Status = GameStatus.Finished;
+
             return result;
         }
     }
