@@ -21,7 +21,7 @@ namespace Game.Domain
         /// <summary>
         /// Снэпшот имени игрока на момент старта игры. Считайте, что это такое требование к игре.
         /// </summary>
-        [BsonElement("name")] // 👈 Добавляем BsonElement
+        [BsonElement("name")]
         public string Name { get; private set; }
         
         /// <summary>
