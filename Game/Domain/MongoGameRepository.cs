@@ -32,8 +32,6 @@ namespace Game.Domain
             var options = new ReplaceOptions { IsUpsert = false };
             gameCollection.ReplaceOne(filter, game, options);
         }
-
-        // Возвращает не более чем limit игр со статусом GameStatus.WaitingToStart
         public IList<GameEntity> FindWaitingToStart(int limit)
         {
             var filter = Builders<GameEntity>.Filter.Eq(g => g.Status, GameStatus.WaitingToStart);
@@ -42,8 +40,6 @@ namespace Game.Domain
                 .Limit(limit)
                 .ToList();
         }
-
-        // Обновляет игру, если она находится в статусе GameStatus.WaitingToStart
         public bool TryUpdateWaitingToStart(GameEntity game)
         {
             var filter = Builders<GameEntity>.Filter.And(
